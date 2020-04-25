@@ -19,7 +19,8 @@ type Infoer interface {
 
 // Options is exported.
 type Options struct {
-	Term string
+	Term    string
+	WithDoc bool
 }
 
 // NewCmdInfo returns an instance of Search command.
@@ -39,11 +40,19 @@ func NewCmdInfo(ig Infoer) *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
+			o.Fill(cmd)
 			o.Execute(ig)
 		},
 	}
 
+	cmd.Flags().BoolP("with-doc", "d", false, "--with-doc")
+
 	return cmd
+}
+
+// Fill fills flags into options.
+func (o *Options) Fill(cmd *cobra.Command) {
+	o.WithDoc, _ = cmd.Flags().GetBool("with-doc")
 }
 
 // Execute is exported.
@@ -72,12 +81,14 @@ func (o *Options) Execute(ig Infoer) {
 	})
 	table.Render()
 
-	infoResult, err := ig.Info(top.Path)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	if o.WithDoc {
+		infoResult, err := ig.Info(top.Path)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 
-	fmt.Println("\nDocumentation:")
-	fmt.Println(infoResult)
+		fmt.Println("\nDocumentation:")
+		fmt.Println(infoResult)
+	}
 }
